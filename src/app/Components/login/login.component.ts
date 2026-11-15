@@ -67,7 +67,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {}
 
-  async login(): Promise<void> {
+  login(): void {
     this.isValidForm = false;
     if (this.loginForm.invalid) {
       return;
@@ -75,51 +75,37 @@ export class LoginComponent implements OnInit {
 
     this.isValidForm = true;
 
-    let responseOK = false;
-    let errorResponse: any;
-
     const { email, password } = this.loginForm.getRawValue();
 
     this.loginUser.email = email;
     this.loginUser.password = password;
 
-    try {
-      const authToken = await this.authService.login(this.loginUser);
+    this.authService.login(this.loginUser).subscribe({
+      next: async (authToken) => {
+        this.loginUser.user_id = authToken.user_id;
+        this.loginUser.access_token = authToken.access_token;
 
-      responseOK = true;
-      this.loginUser.user_id = authToken.user_id;
-      this.loginUser.access_token = authToken.access_token;
+        this.localStorageService.set('user_id', this.loginUser.user_id);
+        this.localStorageService.set('access_token', this.loginUser.access_token);
 
-      // Save token to localStorage
-      this.localStorageService.set('user_id', this.loginUser.user_id);
-      this.localStorageService.set('access_token', this.loginUser.access_token);
-    } catch (error: any) {
-      responseOK = false;
-      errorResponse = error.error;
+        await this.sharedService.managementToast('loginFeedback', true);
 
-      const headerInfo: HeaderMenus = {
-        showAuthSection: false,
-        showNoAuthSection: true,
-      };
-
-      this.headerMenusService.headerManagement.next(headerInfo);
-      this.sharedService.errorLog(error.error);
-    }
-
-    await this.sharedService.managementToast(
-      'loginFeedback',
-      responseOK,
-      errorResponse,
-    );
-
-    if (responseOK) {
-      const headerInfo: HeaderMenus = {
-        showAuthSection: true,
-        showNoAuthSection: false,
-      };
-
-      this.headerMenusService.headerManagement.next(headerInfo);
-      this.router.navigateByUrl('home');
-    }
+        const headerInfo: HeaderMenus = {
+          showAuthSection: true,
+          showNoAuthSection: false,
+        };
+        this.headerMenusService.headerManagement.next(headerInfo);
+        this.router.navigateByUrl('home');
+      },
+      error: (error: any) => {
+        const headerInfo: HeaderMenus = {
+          showAuthSection: false,
+          showNoAuthSection: true,
+        };
+        this.headerMenusService.headerManagement.next(headerInfo);
+        this.sharedService.errorLog(error.error);
+        this.sharedService.managementToast('loginFeedback', false, error.error);
+      },
+    });
   }
 }

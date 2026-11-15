@@ -23,17 +23,14 @@ export class PostsListComponent {
   }
   // TODO 12
 
-  private async loadPosts(): Promise<void> {
-    let errorResponse: any;
+  private loadPosts(): void {
     const userId = this.localStorageService.get('user_id');
 
     if (userId) {
-      try {
-        this.posts = await this.postService.getPostsByUserId(userId);
-      } catch (error: any) {
-        errorResponse = error.error;
-        this.sharedService.errorLog(errorResponse);
-      }
+      this.postService.getPostsByUserId(userId).subscribe({
+        next: (posts) => (this.posts = posts),
+        error: (error: any) => this.sharedService.errorLog(error.error),
+      });
     }
   }
 
@@ -45,21 +42,18 @@ export class PostsListComponent {
     this.router.navigateByUrl('/user/post/' + postId);
   }
 
-  async deletePost(postId: string): Promise<void> {
-    let errorResponse: any;
-
+  deletePost(postId: string): void {
     const result = confirm('Confirm delete post with id: ' + postId + ' .');
 
     if (result) {
-      try {
-        const rowsAffected = await this.postService.deletePost(postId);
-        if (rowsAffected.affected > 0) {
-          this.loadPosts();
-        }
-      } catch (error: any) {
-        errorResponse = error.error;
-        this.sharedService.errorLog(errorResponse);
-      }
+      this.postService.deletePost(postId).subscribe({
+        next: (rowsAffected) => {
+          if (rowsAffected.affected > 0) {
+            this.loadPosts();
+          }
+        },
+        error: (error: any) => this.sharedService.errorLog(error.error),
+      });
     }
   }
 }

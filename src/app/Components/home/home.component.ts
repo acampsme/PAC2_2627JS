@@ -35,42 +35,30 @@ export class HomeComponent {
       },
     );
   }
-  private async loadPosts(): Promise<void> {
+  private loadPosts(): void {
     // TODO 2
-    let errorResponse: any;
-
     const userId = this.localStorageService.get('user_id');
     if (userId) {
       this.showButtons = true;
     }
 
-    try {
-      this.posts = await this.postService.getPosts();
-    } catch (error: any) {
-      errorResponse = error.error;
-      this.sharedService.errorLog(errorResponse);
-    }
+    this.postService.getPosts().subscribe({
+      next: (posts) => (this.posts = posts),
+      error: (error: any) => this.sharedService.errorLog(error.error),
+    });
   }
 
-  async like(postId: string): Promise<void> {
-    let errorResponse: any;
-    try {
-      await this.postService.likePost(postId);
-      this.loadPosts();
-    } catch (error: any) {
-      errorResponse = error.error;
-      this.sharedService.errorLog(errorResponse);
-    }
+  like(postId: string): void {
+    this.postService.likePost(postId).subscribe({
+      next: () => this.loadPosts(),
+      error: (error: any) => this.sharedService.errorLog(error.error),
+    });
   }
 
-  async dislike(postId: string): Promise<void> {
-    let errorResponse: any;
-    try {
-      await this.postService.dislikePost(postId);
-      this.loadPosts();
-    } catch (error: any) {
-      errorResponse = error.error;
-      this.sharedService.errorLog(errorResponse);
-    }
+  dislike(postId: string): void {
+    this.postService.dislikePost(postId).subscribe({
+      next: () => this.loadPosts(),
+      error: (error: any) => this.sharedService.errorLog(error.error),
+    });
   }
 }

@@ -122,10 +122,8 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit(): void {}
 
-  async register(): Promise<void> {
-    let responseOK = false;
+  register(): void {
     this.isValidForm = false;
-    let errorResponse: any;
 
     if (this.registerForm.invalid) {
       return;
@@ -151,35 +149,26 @@ export class RegisterComponent implements OnInit {
       raw.password,
     );
 
-    try {
-      await this.userService.register(this.registerUser);
-      responseOK = true;
-    } catch (error: any) {
-      responseOK = false;
-      errorResponse = error.error;
+    this.userService.register(this.registerUser).subscribe({
+      next: async () => {
+        await this.sharedService.managementToast('registerFeedback', true);
+        this.registerForm.reset();
 
-      const headerInfo: HeaderMenus = {
-        showAuthSection: false,
-        showNoAuthSection: true,
-      };
-      this.headerMenusService.headerManagement.next(headerInfo);
+        // Volver a setear el birth_date por defecto
+        this.birth_date.setValue(formatDate(new Date(), 'yyyy-MM-dd', 'en'));
 
-      this.sharedService.errorLog(errorResponse);
-    }
+        this.router.navigateByUrl('home');
+      },
+      error: (error: any) => {
+        const headerInfo: HeaderMenus = {
+          showAuthSection: false,
+          showNoAuthSection: true,
+        };
+        this.headerMenusService.headerManagement.next(headerInfo);
 
-    await this.sharedService.managementToast(
-      'registerFeedback',
-      responseOK,
-      errorResponse,
-    );
-
-    if (responseOK) {
-      this.registerForm.reset();
-
-      // Volver a setear el birth_date por defecto
-      this.birth_date.setValue(formatDate(new Date(), 'yyyy-MM-dd', 'en'));
-
-      this.router.navigateByUrl('home');
-    }
+        this.sharedService.errorLog(error.error);
+        this.sharedService.managementToast('registerFeedback', false, error.error);
+      },
+    });
   }
 }

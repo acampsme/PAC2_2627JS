@@ -116,34 +116,28 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  async ngOnInit(): Promise<void> {
-    let errorResponse: any;
-
+  ngOnInit(): void {
     const userId = this.localStorageService.get('user_id');
     if (!userId) return;
 
-    try {
-      const userData = await this.userService.getUSerById(userId);
-
-      this.profileForm.patchValue({
-        name: userData.name,
-        surname_1: userData.surname_1,
-        surname_2: userData.surname_2 ?? '',
-        alias: userData.alias,
-        birth_date: formatDate(userData.birth_date, 'yyyy-MM-dd', 'en'),
-        email: userData.email,
-        // password NO se rellena desde backend (normalmente)
-      });
-    } catch (error: any) {
-      errorResponse = error.error;
-      this.sharedService.errorLog(errorResponse);
-    }
+    this.userService.getUSerById(userId).subscribe({
+      next: (userData) => {
+        this.profileForm.patchValue({
+          name: userData.name,
+          surname_1: userData.surname_1,
+          surname_2: userData.surname_2 ?? '',
+          alias: userData.alias,
+          birth_date: formatDate(userData.birth_date, 'yyyy-MM-dd', 'en'),
+          email: userData.email,
+          // password NO se rellena desde backend (normalmente)
+        });
+      },
+      error: (error: any) => this.sharedService.errorLog(error.error),
+    });
   }
 
-  async updateUser(): Promise<void> {
-    let responseOK = false;
+  updateUser(): void {
     this.isValidForm = false;
-    let errorResponse: any;
 
     if (this.profileForm.invalid) return;
     this.isValidForm = true;
@@ -167,19 +161,12 @@ export class ProfileComponent implements OnInit {
       raw.password,
     );
 
-    try {
-      await this.userService.updateUser(userId, this.profileUser);
-      responseOK = true;
-    } catch (error: any) {
-      responseOK = false;
-      errorResponse = error.error;
-      this.sharedService.errorLog(errorResponse);
-    }
-
-    await this.sharedService.managementToast(
-      'profileFeedback',
-      responseOK,
-      errorResponse,
-    );
+    this.userService.updateUser(userId, this.profileUser).subscribe({
+      next: () => this.sharedService.managementToast('profileFeedback', true),
+      error: (error: any) => {
+        this.sharedService.errorLog(error.error);
+        this.sharedService.managementToast('profileFeedback', false, error.error);
+      },
+    });
   }
 }

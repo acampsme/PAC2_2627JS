@@ -41,7 +41,6 @@ export class PostFormComponent implements OnInit {
   isValidForm: boolean | null;
 
   private isUpdateMode: boolean;
-  private validRequest: boolean;
   private postId: string | null;
 
   constructor(
@@ -60,7 +59,6 @@ export class PostFormComponent implements OnInit {
     this.postRequest = new PostRequestDTO('', '', new Date(), '', [], 0, 0);
     this.categoriesList = [];
     this.isUpdateMode = false;
-    this.validRequest = false;
 
     this.title = new FormControl(this.post.title, {
       nonNullable: true,
@@ -93,16 +91,22 @@ export class PostFormComponent implements OnInit {
     });
   }
 
-  async ngOnInit(): Promise<void> {
-    await this.loadCategories();
-
-    let errorResponse: any;
-
+  ngOnInit(): void {
     if (this.postId) {
       this.isUpdateMode = true;
-      try {
-        this.post = await this.postService.getPostById(this.postId);
+    }
 
+    this.loadCategories(() => this.loadPost());
+  }
+
+  private loadPost(): void {
+    if (!this.postId) {
+      return;
+    }
+
+    this.postService.getPostById(this.postId).subscribe({
+      next: (post) => {
+        this.post = post;
         this.title.setValue(this.post.title);
         this.description.setValue(this.post.description);
         this.publication_date.setValue(
@@ -111,83 +115,62 @@ export class PostFormComponent implements OnInit {
         this.categories.setValue(
           this.post.categories?.map((category) => category.categoryId) ?? [],
         );
-      } catch (error: any) {
-        errorResponse = error.error;
-        this.sharedService.errorLog(errorResponse);
-      }
-    }
+      },
+      error: (error: any) => this.sharedService.errorLog(error.error),
+    });
   }
 
-  private async loadCategories(): Promise<void> {
-    let errorResponse: any;
+  private loadCategories(onLoaded: () => void): void {
     const userId = this.localStorageService.get('user_id');
 
-    if (userId) {
-      try {
-        this.categoriesList =
-          await this.categoryService.getCategoriesByUserId(userId);
-      } catch (error: any) {
-        errorResponse = error.error;
-        this.sharedService.errorLog(errorResponse);
-      }
+    if (!userId) {
+      onLoaded();
+      return;
     }
+
+    this.categoryService.getCategoriesByUserId(userId).subscribe({
+      next: (categories) => {
+        this.categoriesList = categories;
+        onLoaded();
+      },
+      error: (error: any) => {
+        this.sharedService.errorLog(error.error);
+        onLoaded();
+      },
+    });
   }
 
-  private async createPost(): Promise<boolean> {
-    let errorResponse: any;
-    let responseOK = false;
-
-    try {
-      await this.postService.createPost(this.postRequest);
-      responseOK = true;
-    } catch (error: any) {
-      errorResponse = error.error;
-      this.sharedService.errorLog(errorResponse);
-    }
-
-    await this.sharedService.managementToast(
-      'postFeedback',
-      responseOK,
-      errorResponse,
-    );
-
-    if (responseOK) {
-      this.router.navigateByUrl('posts');
-    }
-
-    return responseOK;
+  private createPost(): void {
+    this.postService.createPost(this.postRequest).subscribe({
+      next: async () => {
+        await this.sharedService.managementToast('postFeedback', true);
+        this.router.navigateByUrl('posts');
+      },
+      error: (error: any) => {
+        this.sharedService.errorLog(error.error);
+        this.sharedService.managementToast('postFeedback', false, error.error);
+      },
+    });
   }
 
-  private async editPost(): Promise<boolean> {
-    let errorResponse: any;
-    let responseOK = false;
-
+  private editPost(): void {
     if (!this.postId) {
-      return false;
+      return;
     }
 
-    try {
-      await this.postService.updatePost(this.postId, this.postRequest);
-      responseOK = true;
-    } catch (error: any) {
-      errorResponse = error.error;
-      this.sharedService.errorLog(errorResponse);
-    }
-
-    await this.sharedService.managementToast(
-      'postFeedback',
-      responseOK,
-      errorResponse,
-    );
-
-    if (responseOK) {
-      this.router.navigateByUrl('posts');
-    }
-
-    return responseOK;
+    this.postService.updatePost(this.postId, this.postRequest).subscribe({
+      next: async () => {
+        await this.sharedService.managementToast('postFeedback', true);
+        this.router.navigateByUrl('posts');
+      },
+      error: (error: any) => {
+        this.sharedService.errorLog(error.error);
+        this.sharedService.managementToast('postFeedback', false, error.error);
+      },
+    });
   }
 
-  async savePost(): Promise<void> {
+  savePost(): void {
     this.isValidForm = false;
 
     if (this.postForm.invalid) {
@@ -218,9 +201,9 @@ export class PostFormComponent implements OnInit {
     );
 
     if (this.isUpdateMode) {
-      this.validRequest = await this.editPost();
+      this.editPost();
     } else {
-      this.validRequest = await this.createPost();
+      this.createPost();
     }
   }
 }
