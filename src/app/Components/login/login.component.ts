@@ -6,12 +6,12 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
 import { AuthService } from 'src/app/Services/auth.service';
-import { HeaderMenusService } from 'src/app/Services/header-menus.service';
-import { LocalStorageService } from 'src/app/Services/local-storage.service';
 import { SharedService } from 'src/app/Services/shared.service';
+import { loginSuccess } from 'src/app/Store/auth/auth.actions';
+import { AppState } from 'src/app/Store/auth/auth.selectors';
 import { AuthDTO } from '../../Models/auth.dto';
-import { HeaderMenus } from '../../Models/header-menus.dto';
 
 type LoginFormModel = {
   email: FormControl<string>;
@@ -36,8 +36,7 @@ export class LoginComponent implements OnInit {
     private formBuilder: FormBuilder,
     private authService: AuthService,
     private sharedService: SharedService,
-    private headerMenusService: HeaderMenusService,
-    private localStorageService: LocalStorageService,
+    private store: Store<AppState>,
     private router: Router,
   ) {
     // TODO 20
@@ -85,24 +84,18 @@ export class LoginComponent implements OnInit {
         this.loginUser.user_id = authToken.user_id;
         this.loginUser.access_token = authToken.access_token;
 
-        this.localStorageService.set('user_id', this.loginUser.user_id);
-        this.localStorageService.set('access_token', this.loginUser.access_token);
+        this.store.dispatch(
+          loginSuccess({
+            userId: authToken.user_id,
+            accessToken: authToken.access_token,
+          }),
+        );
 
         await this.sharedService.managementToast('loginFeedback', true);
 
-        const headerInfo: HeaderMenus = {
-          showAuthSection: true,
-          showNoAuthSection: false,
-        };
-        this.headerMenusService.headerManagement.next(headerInfo);
         this.router.navigateByUrl('home');
       },
       error: (error: any) => {
-        const headerInfo: HeaderMenus = {
-          showAuthSection: false,
-          showNoAuthSection: true,
-        };
-        this.headerMenusService.headerManagement.next(headerInfo);
         this.sharedService.errorLog(error.error);
         this.sharedService.managementToast('loginFeedback', false, error.error);
       },

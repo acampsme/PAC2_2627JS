@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { LocalStorageService } from 'src/app/Services/local-storage.service';
+import { Store } from '@ngrx/store';
+import { take } from 'rxjs/operators';
 import { PostService } from 'src/app/Services/post.service';
 import { SharedService } from 'src/app/Services/shared.service';
+import { AppState, selectUserId } from 'src/app/Store/auth/auth.selectors';
 import { PostDTO } from '../../../Models/post.dto';
 
 @Component({
@@ -16,22 +18,25 @@ export class PostsListComponent {
   constructor(
     private postService: PostService,
     private router: Router,
-    private localStorageService: LocalStorageService,
     private sharedService: SharedService,
+    private store: Store<AppState>,
   ) {
     this.loadPosts();
   }
   // TODO 12
 
   private loadPosts(): void {
-    const userId = this.localStorageService.get('user_id');
+    this.store
+      .select(selectUserId)
+      .pipe(take(1))
+      .subscribe((userId) => {
+        if (!userId) return;
 
-    if (userId) {
-      this.postService.getPostsByUserId(userId).subscribe({
-        next: (posts) => (this.posts = posts),
-        error: (error: any) => this.sharedService.errorLog(error.error),
+        this.postService.getPostsByUserId(userId).subscribe({
+          next: (posts) => (this.posts = posts),
+          error: (error: any) => this.sharedService.errorLog(error.error),
+        });
       });
-    }
   }
 
   createPost(): void {

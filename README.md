@@ -18,6 +18,14 @@ Run `ng build` to build the project. The build artifacts will be stored in the `
 
 Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
+## Authentication state
+
+Authentication is managed in memory by NgRx Store. The `auth` state keeps the
+authenticated user's ID and access token; login and logout dispatch auth
+actions, and components, the route guard, and the HTTP interceptor select the
+state they need. The state is intentionally not persisted, so reloading the
+application signs the user out.
+
 ## Running end-to-end tests
 
 Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.

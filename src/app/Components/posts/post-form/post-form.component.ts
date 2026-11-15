@@ -7,10 +7,12 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { take } from 'rxjs/operators';
 import { CategoryService } from 'src/app/Services/category.service';
-import { LocalStorageService } from 'src/app/Services/local-storage.service';
 import { PostService } from 'src/app/Services/post.service';
 import { SharedService } from 'src/app/Services/shared.service';
+import { AppState, selectUserId } from 'src/app/Store/auth/auth.selectors';
 import { CategoryDTO } from '../../../Models/category.dto';
 import { PostRequestDTO } from '../../../Models/post-request.dto';
 import { PostDTO } from '../../../Models/post.dto';
@@ -49,7 +51,7 @@ export class PostFormComponent implements OnInit {
     private formBuilder: FormBuilder,
     private router: Router,
     private sharedService: SharedService,
-    private localStorageService: LocalStorageService,
+    private store: Store<AppState>,
     private categoryService: CategoryService,
   ) {
     // TODO 13
@@ -121,23 +123,26 @@ export class PostFormComponent implements OnInit {
   }
 
   private loadCategories(onLoaded: () => void): void {
-    const userId = this.localStorageService.get('user_id');
+    this.store
+      .select(selectUserId)
+      .pipe(take(1))
+      .subscribe((userId) => {
+        if (!userId) {
+          onLoaded();
+          return;
+        }
 
-    if (!userId) {
-      onLoaded();
-      return;
-    }
-
-    this.categoryService.getCategoriesByUserId(userId).subscribe({
-      next: (categories) => {
-        this.categoriesList = categories;
-        onLoaded();
-      },
-      error: (error: any) => {
-        this.sharedService.errorLog(error.error);
-        onLoaded();
-      },
-    });
+        this.categoryService.getCategoriesByUserId(userId).subscribe({
+          next: (categories) => {
+            this.categoriesList = categories;
+            onLoaded();
+          },
+          error: (error: any) => {
+            this.sharedService.errorLog(error.error);
+            onLoaded();
+          },
+        });
+      });
   }
 
   private createPost(): void {
@@ -179,31 +184,33 @@ export class PostFormComponent implements OnInit {
 
     this.isValidForm = true;
 
-    const userId = this.localStorageService.get('user_id');
-    if (!userId) {
-      return;
-    }
+    this.store
+      .select(selectUserId)
+      .pipe(take(1))
+      .subscribe((userId) => {
+        if (!userId) return;
 
-    const { title, description, publication_date, categories } =
-      this.postForm.getRawValue();
+        const { title, description, publication_date, categories } =
+          this.postForm.getRawValue();
 
-    const [y, m, d] = publication_date.split('-').map(Number);
-    const publicationDate = new Date(y, m - 1, d);
+        const [y, m, d] = publication_date.split('-').map(Number);
+        const publicationDate = new Date(y, m - 1, d);
 
-    this.postRequest = new PostRequestDTO(
-      title,
-      description,
-      publicationDate,
-      userId,
-      categories,
-      this.isUpdateMode ? this.post.num_likes : 0,
-      this.isUpdateMode ? this.post.num_dislikes : 0,
-    );
+        this.postRequest = new PostRequestDTO(
+          title,
+          description,
+          publicationDate,
+          userId,
+          categories,
+          this.isUpdateMode ? this.post.num_likes : 0,
+          this.isUpdateMode ? this.post.num_dislikes : 0,
+        );
 
-    if (this.isUpdateMode) {
-      this.editPost();
-    } else {
-      this.createPost();
-    }
+        if (this.isUpdateMode) {
+          this.editPost();
+        } else {
+          this.createPost();
+        }
+      });
   }
 }

@@ -6,8 +6,10 @@ import {
   RouterStateSnapshot,
   UrlTree,
 } from '@angular/router';
+import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
-import { LocalStorageService } from '../Services/local-storage.service';
+import { map, take } from 'rxjs/operators';
+import { AppState, selectAccessToken } from '../Store/auth/auth.selectors';
 
 @Injectable({
   providedIn: 'root',
@@ -15,25 +17,18 @@ import { LocalStorageService } from '../Services/local-storage.service';
 export class AuthGuard implements CanActivate {
   constructor(
     private router: Router,
-    private localStorageService: LocalStorageService
+    private store: Store<AppState>
   ) {}
 
   canActivate(
-    route: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot
-  ):
-    | Observable<boolean | UrlTree>
-    | Promise<boolean | UrlTree>
-    | boolean
-    | UrlTree {
-    const access_token = this.localStorageService.get('access_token');
-    if (access_token) {
-      // logged in so return true
-      return true;
-    }
-
-    this.router.navigate(['/login']);
-
-    return false;
+    _route: ActivatedRouteSnapshot,
+    _state: RouterStateSnapshot,
+  ): Observable<boolean | UrlTree> {
+    return this.store.select(selectAccessToken).pipe(
+      take(1),
+      map((accessToken) =>
+        accessToken ? true : this.router.createUrlTree(['/login']),
+      ),
+    );
   }
 }

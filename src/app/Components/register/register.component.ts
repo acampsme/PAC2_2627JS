@@ -7,10 +7,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { HeaderMenusService } from 'src/app/Services/header-menus.service';
 import { SharedService } from 'src/app/Services/shared.service';
 import { UserService } from 'src/app/Services/user.service';
-import { HeaderMenus } from '../../Models/header-menus.dto';
 import { UserDTO } from '../../Models/user.dto';
 
 type RegisterFormModel = {
@@ -47,7 +45,6 @@ export class RegisterComponent implements OnInit {
     private formBuilder: FormBuilder,
     private userService: UserService,
     private sharedService: SharedService,
-    private headerMenusService: HeaderMenusService,
     private router: Router,
   ) {
     // TODO 17
@@ -160,12 +157,6 @@ export class RegisterComponent implements OnInit {
         this.router.navigateByUrl('home');
       },
       error: (error: any) => {
-        const headerInfo: HeaderMenus = {
-          showAuthSection: false,
-          showNoAuthSection: true,
-        };
-        this.headerMenusService.headerManagement.next(headerInfo);
-
         this.sharedService.errorLog(error.error);
         this.sharedService.managementToast('registerFeedback', false, error.error);
       },

@@ -6,9 +6,11 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { LocalStorageService } from 'src/app/Services/local-storage.service';
+import { Store } from '@ngrx/store';
+import { take } from 'rxjs/operators';
 import { SharedService } from 'src/app/Services/shared.service';
 import { UserService } from 'src/app/Services/user.service';
+import { AppState, selectUserId } from 'src/app/Store/auth/auth.selectors';
 import { UserDTO } from '../../Models/user.dto';
 
 type ProfileFormModel = {
@@ -45,7 +47,7 @@ export class ProfileComponent implements OnInit {
     private formBuilder: FormBuilder,
     private userService: UserService,
     private sharedService: SharedService,
-    private localStorageService: LocalStorageService,
+    private store: Store<AppState>,
   ) {
     // TODO 5
     this.profileUser = new UserDTO('', '', '', '', new Date(), '', '');
@@ -117,23 +119,26 @@ export class ProfileComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const userId = this.localStorageService.get('user_id');
-    if (!userId) return;
+    this.store
+      .select(selectUserId)
+      .pipe(take(1))
+      .subscribe((userId) => {
+        if (!userId) return;
 
-    this.userService.getUSerById(userId).subscribe({
-      next: (userData) => {
-        this.profileForm.patchValue({
-          name: userData.name,
-          surname_1: userData.surname_1,
-          surname_2: userData.surname_2 ?? '',
-          alias: userData.alias,
-          birth_date: formatDate(userData.birth_date, 'yyyy-MM-dd', 'en'),
-          email: userData.email,
-          // password NO se rellena desde backend (normalmente)
+        this.userService.getUSerById(userId).subscribe({
+          next: (userData) => {
+            this.profileForm.patchValue({
+              name: userData.name,
+              surname_1: userData.surname_1,
+              surname_2: userData.surname_2 ?? '',
+              alias: userData.alias,
+              birth_date: formatDate(userData.birth_date, 'yyyy-MM-dd', 'en'),
+              email: userData.email,
+            });
+          },
+          error: (error: any) => this.sharedService.errorLog(error.error),
         });
-      },
-      error: (error: any) => this.sharedService.errorLog(error.error),
-    });
+      });
   }
 
   updateUser(): void {
@@ -141,9 +146,6 @@ export class ProfileComponent implements OnInit {
 
     if (this.profileForm.invalid) return;
     this.isValidForm = true;
-
-    const userId = this.localStorageService.get('user_id');
-    if (!userId) return;
 
     const raw = this.profileForm.getRawValue();
 
@@ -161,12 +163,24 @@ export class ProfileComponent implements OnInit {
       raw.password,
     );
 
-    this.userService.updateUser(userId, this.profileUser).subscribe({
-      next: () => this.sharedService.managementToast('profileFeedback', true),
-      error: (error: any) => {
-        this.sharedService.errorLog(error.error);
-        this.sharedService.managementToast('profileFeedback', false, error.error);
-      },
-    });
+    this.store
+      .select(selectUserId)
+      .pipe(take(1))
+      .subscribe((userId) => {
+        if (!userId) return;
+
+        this.userService.updateUser(userId, this.profileUser).subscribe({
+          next: () =>
+            this.sharedService.managementToast('profileFeedback', true),
+          error: (error: any) => {
+            this.sharedService.errorLog(error.error);
+            this.sharedService.managementToast(
+              'profileFeedback',
+              false,
+              error.error,
+            );
+          },
+        });
+      });
   }
 }

@@ -5,34 +5,36 @@ import {
   HttpRequest,
 } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
-import { LocalStorageService } from './local-storage.service';
+import { switchMap, take } from 'rxjs/operators';
+import { AppState, selectAccessToken } from '../Store/auth/auth.selectors';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthInterceptorService implements HttpInterceptor {
-  access_token: string | null;
-
-  constructor(private localStorageService: LocalStorageService) {
-    this.access_token = this.localStorageService.get('access_token');
-  }
+  constructor(private store: Store<AppState>) {}
 
   intercept(
-    req: HttpRequest<any>,
-    next: HttpHandler
-  ): Observable<HttpEvent<any>> {
-    this.access_token = this.localStorageService.get('access_token');
-    if (this.access_token) {
-      req = req.clone({
-        setHeaders: {
-          'Content-Type': 'application/json; charset=utf-8',
-          Accept: 'application/json',
-          Authorization: `Bearer ${this.access_token}`,
-        },
-      });
-    }
+    req: HttpRequest<unknown>,
+    next: HttpHandler,
+  ): Observable<HttpEvent<unknown>> {
+    return this.store.select(selectAccessToken).pipe(
+      take(1),
+      switchMap((accessToken) => {
+        if (accessToken) {
+          req = req.clone({
+            setHeaders: {
+              'Content-Type': 'application/json; charset=utf-8',
+              Accept: 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+        }
 
-    return next.handle(req);
+        return next.handle(req);
+      }),
+    );
   }
 }

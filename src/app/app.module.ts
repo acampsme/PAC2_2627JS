@@ -2,6 +2,7 @@ import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
+import { StoreModule } from '@ngrx/store';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CategoriesListComponent } from './Components/categories/categories-list/categories-list.component';
@@ -17,6 +18,7 @@ import { ProfileComponent } from './Components/profile/profile.component';
 import { RegisterComponent } from './Components/register/register.component';
 import { FormatDatePipe } from './Pipes/format-date.pipe';
 import { AuthInterceptorService } from './Services/auth-interceptor.service';
+import { authReducer } from './Store/auth/auth.reducer';
 
 @NgModule({
   declarations: [
@@ -39,6 +41,7 @@ import { AuthInterceptorService } from './Services/auth-interceptor.service';
     AppRoutingModule,
     ReactiveFormsModule,
     HttpClientModule,
+    StoreModule.forRoot({ auth: authReducer }),
   ],
   providers: [
     {
