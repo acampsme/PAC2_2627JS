@@ -21,10 +21,17 @@ Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.
 ## Authentication state
 
 Authentication is managed in memory by NgRx Store. The `auth` state keeps the
-authenticated user's ID and access token; login and logout dispatch auth
-actions, and components, the route guard, and the HTTP interceptor select the
-state they need. The state is intentionally not persisted, so reloading the
-application signs the user out.
+`credentials`, `loading`, `loaded`, and `error` fields. Login start, success,
+and failure are represented by separate actions; logout clears the state.
+Components, the route guard, and the HTTP interceptor select the state they
+need. The submitted password is never put in Redux state or action payloads.
+The state is intentionally not persisted, so reloading the application signs
+the user out.
+
+NgRx Store DevTools instrumentation is enabled in development mode (with a
+25-action history). Install/enable the Redux DevTools browser extension to
+inspect the `auth` state and actions; the integration is read-only and
+disabled in production.
 
 ## Running end-to-end tests
 

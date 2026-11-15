@@ -9,12 +9,12 @@ export const selectAuthState = createFeatureSelector<AuthState>('auth');
 
 export const selectUserId = createSelector(
   selectAuthState,
-  (state) => state.userId,
+  (state) => state.credentials?.user_id ?? null,
 );
 
 export const selectAccessToken = createSelector(
   selectAuthState,
-  (state) => state.accessToken,
+  (state) => state.credentials?.access_token ?? null,
 );
 
 export const selectIsAuthenticated = createSelector(

@@ -1,20 +1,68 @@
-import { loginSuccess, logout } from './auth.actions';
+import {
+  loginFailure,
+  loginStarted,
+  loginSuccess,
+  logout,
+} from './auth.actions';
 import { authReducer, initialAuthState } from './auth.reducer';
 
 describe('authReducer', () => {
-  it('stores the authenticated user and access token after login', () => {
+  it('sets the loading state when login starts', () => {
+    const state = authReducer(initialAuthState, loginStarted());
+
+    expect(state).toEqual({
+      credentials: null,
+      loading: true,
+      loaded: false,
+      error: null,
+    });
+  });
+
+  it('stores credentials after successful login', () => {
+    const credentials = {
+      user_id: 'user-1',
+      access_token: 'token-1',
+      email: 'user@example.com',
+      password: '',
+    };
     const state = authReducer(
       initialAuthState,
-      loginSuccess({ userId: 'user-1', accessToken: 'token-1' }),
+      loginSuccess({ credentials }),
     );
 
-    expect(state).toEqual({ userId: 'user-1', accessToken: 'token-1' });
+    expect(state).toEqual({
+      credentials,
+      loading: false,
+      loaded: true,
+      error: null,
+    });
+  });
+
+  it('records a login error and stops loading', () => {
+    const state = authReducer(
+      authReducer(initialAuthState, loginStarted()),
+      loginFailure({ error: 'Invalid credentials' }),
+    );
+
+    expect(state).toEqual({
+      credentials: null,
+      loading: false,
+      loaded: true,
+      error: 'Invalid credentials',
+    });
   });
 
   it('clears authentication state after logout', () => {
     const authenticatedState = {
-      userId: 'user-1',
-      accessToken: 'token-1',
+      credentials: {
+        user_id: 'user-1',
+        access_token: 'token-1',
+        email: 'user@example.com',
+        password: '',
+      },
+      loading: false,
+      loaded: true,
+      error: null,
     };
 
     expect(authReducer(authenticatedState, logout())).toEqual(

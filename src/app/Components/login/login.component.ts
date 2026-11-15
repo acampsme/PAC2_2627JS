@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import {
   FormBuilder,
@@ -9,7 +10,11 @@ import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { AuthService } from 'src/app/Services/auth.service';
 import { SharedService } from 'src/app/Services/shared.service';
-import { loginSuccess } from 'src/app/Store/auth/auth.actions';
+import {
+  loginFailure,
+  loginStarted,
+  loginSuccess,
+} from 'src/app/Store/auth/auth.actions';
 import { AppState } from 'src/app/Store/auth/auth.selectors';
 import { AuthDTO } from '../../Models/auth.dto';
 
@@ -79,6 +84,7 @@ export class LoginComponent implements OnInit {
     this.loginUser.email = email;
     this.loginUser.password = password;
 
+    this.store.dispatch(loginStarted());
     this.authService.login(this.loginUser).subscribe({
       next: async (authToken) => {
         this.loginUser.user_id = authToken.user_id;
@@ -86,8 +92,12 @@ export class LoginComponent implements OnInit {
 
         this.store.dispatch(
           loginSuccess({
-            userId: authToken.user_id,
-            accessToken: authToken.access_token,
+            credentials: new AuthDTO(
+              authToken.user_id,
+              authToken.access_token,
+              email,
+              '',
+            ),
           }),
         );
 
@@ -95,7 +105,10 @@ export class LoginComponent implements OnInit {
 
         this.router.navigateByUrl('home');
       },
-      error: (error: any) => {
+      error: (error: HttpErrorResponse) => {
+        this.store.dispatch(
+          loginFailure({ error: error.message }),
+        );
         this.sharedService.errorLog(error.error);
         this.sharedService.managementToast('loginFeedback', false, error.error);
       },
