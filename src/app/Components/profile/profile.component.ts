@@ -29,7 +29,7 @@ type ProfileFormModel = {
   styleUrls: ['./profile.component.scss'],
 })
 export class ProfileComponent implements OnInit {
-  // TODO 4
+
   profileUser: UserDTO;
 
   name: FormControl<string>;
@@ -49,7 +49,7 @@ export class ProfileComponent implements OnInit {
     private sharedService: SharedService,
     private store: Store<AppState>,
   ) {
-    // TODO 5
+
     this.profileUser = new UserDTO('', '', '', '', new Date(), '', '');
     this.isValidForm = null;
 

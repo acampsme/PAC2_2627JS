@@ -30,7 +30,7 @@ export class PostService {
   }
 
   getPostsByUserId(userId: string): Observable<PostDTO[]> {
-    // TODO 22
+   
     return this.http
       .get<PostDTO[]>('http://localhost:3000/users/posts/' + userId);
   }

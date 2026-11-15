@@ -27,7 +27,7 @@ type RegisterFormModel = {
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent implements OnInit {
-  // TODO 16
+  
   registerUser: UserDTO;
 
   name: FormControl<string>;
@@ -47,7 +47,7 @@ export class RegisterComponent implements OnInit {
     private sharedService: SharedService,
     private router: Router,
   ) {
-    // TODO 17
+   
 
     this.registerUser = new UserDTO('', '', '', '', new Date(), '', '');
     this.isValidForm = null;

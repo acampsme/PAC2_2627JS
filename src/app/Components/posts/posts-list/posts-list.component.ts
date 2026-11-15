@@ -23,7 +23,7 @@ export class PostsListComponent {
   ) {
     this.loadPosts();
   }
-  // TODO 12
+
 
   private loadPosts(): void {
     this.store

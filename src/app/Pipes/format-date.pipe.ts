@@ -5,7 +5,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 })
 export class FormatDatePipe implements PipeTransform {
   transform(value: Date, ...args: number[]): unknown {
-    // TODO 1
+   
 
     if (!value) {
       return '';

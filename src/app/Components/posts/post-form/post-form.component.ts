@@ -54,7 +54,7 @@ export class PostFormComponent implements OnInit {
     private store: Store<AppState>,
     private categoryService: CategoryService,
   ) {
-    // TODO 13
+
     this.isValidForm = null;
     this.postId = this.activatedRoute.snapshot.paramMap.get('id');
     this.post = new PostDTO('', '', 0, 0, new Date());
